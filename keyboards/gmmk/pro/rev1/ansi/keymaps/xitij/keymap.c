@@ -74,13 +74,174 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 // clang-format on
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Encoder (rotary knob) enabled
+/////////////////////////////////////////////////////////////////////////////////////
 #ifdef ENCODER_ENABLE
+// Called when the knob is turned (allows user to handle)
 bool encoder_update_user(uint8_t index, bool clockwise) {
     if (clockwise) {
       tap_code(KC_VOLU);
     } else {
       tap_code(KC_VOLD);
     }
-    return false;
+    return false; // Skip all further processing.
 }
 #endif // ENCODER_ENABLE
+
+/////////////////////////////////////////////////////////////////////////////////////
+// RGB Matrix (rgb key leds) enabled
+/////////////////////////////////////////////////////////////////////////////////////
+#ifdef RGB_MATRIX_ENABLE
+#define LED_FLAG_CAPS LED_FLAG_NONE
+static void set_rgb_caps_leds_on(void);
+static void set_rgb_caps_leds_off(void);
+
+// Called when the lighting layer is updated. led is single color per key
+bool led_update_user(led_t led_state) {
+  if (led_state.caps_lock) {
+    if (!rgb_matrix_is_enabled()) {
+      // Turn ON the RGB Matrix for CAPS LOCK.
+      rgb_matrix_set_flags(LED_FLAG_CAPS);
+      rgb_matrix_enable();
+    }
+  } else if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
+    // RGB Matrix was only ON because of CAPS LOCK. Turn it OFF.
+    rgb_matrix_set_flags(LED_FLAG_ALL);
+    rgb_matrix_disable();
+  }
+  return true; // Continue other processing.
+}
+
+// Called when any key is pressed.
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) {
+    case RGB_MOD:   // Next RGB Mode
+    case RGB_RMOD:  // Previous RGB Mode
+    case RGB_HUI:   // Hue Increase
+    case RGB_HUD:   // Hue Decrease
+    case RGB_VAI:   // Brightness Increase
+    case RGB_VAD:   // Brightness Decrease
+    case RGB_SPI:   // Speed Increase
+    case RGB_SPD:   // Speed Decrease
+      if (record->event.pressed) {
+        if (rgb_matrix_get_flags() != LED_FLAG_ALL) {
+          // Ignore changes to RGB settings while only it's supposed to be OFF.
+          return false;  // Skip all further processing.
+        }
+      }
+      break;
+    case RGB_TOG:   // RGB Toggle ON or OFF
+      if (record->event.pressed) {
+        if (rgb_matrix_is_enabled()) {
+          switch (rgb_matrix_get_flags()) {
+            case LED_FLAG_CAPS:
+              // RGB was turned ON because of CAPS.
+              // Change to LED_FLAG_ALL to signal RGB Toggle.
+              rgb_matrix_set_flags(LED_FLAG_ALL);
+              // Disable the RGB (Will be re-enabled by the processing of the toggle below by rgb_matrix_indicator_user).
+              rgb_matrix_disable_noeeprom();
+              break;
+            case LED_FLAG_ALL:
+              if (host_keyboard_led_state().caps_lock) {
+                // Change flag to signal CAPS.
+                rgb_matrix_set_flags(LED_FLAG_CAPS);
+                // Disable the RGB (Will be re-enabled by the processing of the toggle below by rgb_matrix_indicator_user).
+                rgb_matrix_disable_noeeprom();
+              }
+              break;
+          }
+        }
+      }
+      break;
+  }
+  // Continue implementations
+  return true;
+}
+
+// Called when the rgb layer is updated. rgb is all colors per key.
+void rgb_matrix_indicators_user() {
+  if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
+    rgb_matrix_set_color_all(0x0, 0x0, 0x0);
+  }
+  if (host_keyboard_led_state().caps_lock) {
+    set_rgb_caps_leds_on();
+  }
+}
+
+//  67, led 01   0, ESC    6, F1      12, F2      18, F3   23, F4   28, F5      34, F6   39, F7   44, F8      50, F9   56, F10   61, F11    66, F12    69, Prt       Rotary(Mute)   68, led 12
+//  70, led 02   1, ~      7, 1       13, 2       19, 3    24, 4    29, 5       35, 6    40, 7    45, 8       51, 9    57, 0     62, -_     78, (=+)   85, BackSpc   72, Home       71, led 13
+//  73, led 03   2, Tab    8, Q       14, W       20. E    25, R    30, T       36, Y    41, U    46, I       52, O    58, P     63, [{     89, ]}     93, \|        75, PgUp       74, led 14
+//  76, led 04   3, Caps   9, A       15, S       21, D    26, F    31, G       37, H    42, J    47, K       53, L    59, ;:    64, '"                96, Enter     86, PgDn       77, led 15
+//  80, led 05   4, Sh_L   10, Z      16, X       22, C    27, V    32, B       38, N    43, M    48, ,<      54, .<   60, /?               90, Sh_R   94, Up        82, End        81, led 16
+//  83, led 06   5, Ct_L   11,Win_L   17, Alt_L                     33, SPACE                     49, Alt_R   55, FN             65, Ct_R   95, Left   97, Down      79, Right      84, led 17
+//  87, led 07                                                                                                                                                                      88, led 18
+//  91, led 08
+static void set_rgb_caps_leds_on() {
+  // Set alpha and capslock to red
+  rgb_matrix_set_color( 3, 255, 0, 0);	// Caps
+
+  rgb_matrix_set_color( 8, 255, 0, 0);	// Q
+  rgb_matrix_set_color(14, 255, 0, 0);	// W
+  rgb_matrix_set_color(20, 255, 0, 0);	// E
+  rgb_matrix_set_color(25, 255, 0, 0);	// R
+  rgb_matrix_set_color(30, 255, 0, 0);	// T
+  rgb_matrix_set_color(36, 255, 0, 0);	// Y
+  rgb_matrix_set_color(41, 255, 0, 0);	// U
+  rgb_matrix_set_color(46, 255, 0, 0);	// I
+  rgb_matrix_set_color(52, 255, 0, 0);	// O
+  rgb_matrix_set_color(58, 255, 0, 0);	// P
+
+  rgb_matrix_set_color( 9, 255, 0, 0);	// A
+  rgb_matrix_set_color(15, 255, 0, 0);	// S
+  rgb_matrix_set_color(21, 255, 0, 0);	// D
+  rgb_matrix_set_color(26, 255, 0, 0);	// F
+  rgb_matrix_set_color(31, 255, 0, 0);	// G
+  rgb_matrix_set_color(37, 255, 0, 0);	// H
+  rgb_matrix_set_color(42, 255, 0, 0);	// J
+  rgb_matrix_set_color(47, 255, 0, 0);	// K
+  rgb_matrix_set_color(53, 255, 0, 0);	// L
+
+  rgb_matrix_set_color(10, 255, 0, 0);	// Z
+  rgb_matrix_set_color(16, 255, 0, 0);	// X
+  rgb_matrix_set_color(22, 255, 0, 0);	// C
+  rgb_matrix_set_color(27, 255, 0, 0);	// V
+  rgb_matrix_set_color(32, 255, 0, 0);	// B
+  rgb_matrix_set_color(38, 255, 0, 0);	// N
+  rgb_matrix_set_color(43, 255, 0, 0);	// M
+}
+
+static void set_rgb_caps_leds_off() {
+  // Set alpha and capslock to off
+  rgb_matrix_set_color( 3, 0, 0, 0);	// Caps
+
+  rgb_matrix_set_color( 8, 0, 0, 0);	// Q
+  rgb_matrix_set_color(14, 0, 0, 0);	// W
+  rgb_matrix_set_color(20, 0, 0, 0);	// E
+  rgb_matrix_set_color(25, 0, 0, 0);	// R
+  rgb_matrix_set_color(30, 0, 0, 0);	// T
+  rgb_matrix_set_color(36, 0, 0, 0);	// Y
+  rgb_matrix_set_color(41, 0, 0, 0);	// U
+  rgb_matrix_set_color(46, 0, 0, 0);	// I
+  rgb_matrix_set_color(52, 0, 0, 0);	// O
+  rgb_matrix_set_color(58, 0, 0, 0);	// P
+
+  rgb_matrix_set_color( 9, 0, 0, 0);	// A
+  rgb_matrix_set_color(15, 0, 0, 0);	// S
+  rgb_matrix_set_color(21, 0, 0, 0);	// D
+  rgb_matrix_set_color(26, 0, 0, 0);	// F
+  rgb_matrix_set_color(31, 0, 0, 0);	// G
+  rgb_matrix_set_color(37, 0, 0, 0);	// H
+  rgb_matrix_set_color(42, 0, 0, 0);	// J
+  rgb_matrix_set_color(47, 0, 0, 0);	// K
+  rgb_matrix_set_color(53, 0, 0, 0);	// L
+
+  rgb_matrix_set_color(10, 0, 0, 0);	// Z
+  rgb_matrix_set_color(16, 0, 0, 0);	// X
+  rgb_matrix_set_color(22, 0, 0, 0);	// C
+  rgb_matrix_set_color(27, 0, 0, 0);	// V
+  rgb_matrix_set_color(32, 0, 0, 0);	// B
+  rgb_matrix_set_color(38, 0, 0, 0);	// N
+  rgb_matrix_set_color(43, 0, 0, 0);	// M
+}
+#endif // RGB_MATRIX_ENABLE
