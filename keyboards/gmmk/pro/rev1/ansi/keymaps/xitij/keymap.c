@@ -95,7 +95,6 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 #ifdef RGB_MATRIX_ENABLE
 #define LED_FLAG_CAPS LED_FLAG_NONE
 static void set_rgb_caps_leds_on(void);
-static void set_rgb_caps_leds_off(void);
 
 // Called when the lighting layer is updated. led is single color per key
 bool led_update_user(led_t led_state) {
@@ -103,7 +102,7 @@ bool led_update_user(led_t led_state) {
     if (!rgb_matrix_is_enabled()) {
       // Turn ON the RGB Matrix for CAPS LOCK.
       rgb_matrix_set_flags(LED_FLAG_CAPS);
-      rgb_matrix_enable();
+      set_rgb_caps_leds_on();
     }
   } else if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
     // RGB Matrix was only ON because of CAPS LOCK. Turn it OFF.
@@ -209,39 +208,5 @@ static void set_rgb_caps_leds_on() {
   rgb_matrix_set_color(32, 255, 0, 0);	// B
   rgb_matrix_set_color(38, 255, 0, 0);	// N
   rgb_matrix_set_color(43, 255, 0, 0);	// M
-}
-
-static void set_rgb_caps_leds_off() {
-  // Set alpha and capslock to off
-  rgb_matrix_set_color( 3, 0, 0, 0);	// Caps
-
-  rgb_matrix_set_color( 8, 0, 0, 0);	// Q
-  rgb_matrix_set_color(14, 0, 0, 0);	// W
-  rgb_matrix_set_color(20, 0, 0, 0);	// E
-  rgb_matrix_set_color(25, 0, 0, 0);	// R
-  rgb_matrix_set_color(30, 0, 0, 0);	// T
-  rgb_matrix_set_color(36, 0, 0, 0);	// Y
-  rgb_matrix_set_color(41, 0, 0, 0);	// U
-  rgb_matrix_set_color(46, 0, 0, 0);	// I
-  rgb_matrix_set_color(52, 0, 0, 0);	// O
-  rgb_matrix_set_color(58, 0, 0, 0);	// P
-
-  rgb_matrix_set_color( 9, 0, 0, 0);	// A
-  rgb_matrix_set_color(15, 0, 0, 0);	// S
-  rgb_matrix_set_color(21, 0, 0, 0);	// D
-  rgb_matrix_set_color(26, 0, 0, 0);	// F
-  rgb_matrix_set_color(31, 0, 0, 0);	// G
-  rgb_matrix_set_color(37, 0, 0, 0);	// H
-  rgb_matrix_set_color(42, 0, 0, 0);	// J
-  rgb_matrix_set_color(47, 0, 0, 0);	// K
-  rgb_matrix_set_color(53, 0, 0, 0);	// L
-
-  rgb_matrix_set_color(10, 0, 0, 0);	// Z
-  rgb_matrix_set_color(16, 0, 0, 0);	// X
-  rgb_matrix_set_color(22, 0, 0, 0);	// C
-  rgb_matrix_set_color(27, 0, 0, 0);	// V
-  rgb_matrix_set_color(32, 0, 0, 0);	// B
-  rgb_matrix_set_color(38, 0, 0, 0);	// N
-  rgb_matrix_set_color(43, 0, 0, 0);	// M
 }
 #endif // RGB_MATRIX_ENABLE
