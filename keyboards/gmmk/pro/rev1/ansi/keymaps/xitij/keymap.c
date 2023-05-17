@@ -168,6 +168,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
               rgb_matrix_set_flags(LED_FLAG_ALL);
               rgb_matrix_disable_noeeprom(); 
               break;  
+          }
         } else {
           // RGB was off, turn on the caps lock leds.
           rgb_matrix_set_flags(LED_FLAG_CAPS);
@@ -184,7 +185,6 @@ void rgb_matrix_indicators_user() {
   if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
     // rgb_matrix_set_color_all(0x0, 0x0, 0x0);
     set_rgb_caps_leds_on();
-    return false;
   }
   // if (host_keyboard_led_state().caps_lock) {
   //   set_rgb_caps_leds_on();
