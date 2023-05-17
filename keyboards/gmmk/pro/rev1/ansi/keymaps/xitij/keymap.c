@@ -101,7 +101,7 @@ void keyboard_post_init_user(void) {
   debug_enable=true;
   debug_matrix=true;
   debug_keyboard=true;
-  xprintf('hello world');
+  xprintf("hello world");
   //debug_mouse=true;
 }
 
