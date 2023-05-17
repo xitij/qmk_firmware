@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include QMK_KEYBOARD_H
+#include "print.h"
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -132,6 +133,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case RGB_TOG:   // RGB Toggle ON or OFF
       if (record->event.pressed) {
         if (rgb_matrix_is_enabled()) {
+          uprintf("%x flags", rgb_matrix_get_flags());
           switch (rgb_matrix_get_flags()) {
             case LED_FLAG_CAPS:
               // RGB was turned ON because of CAPS.
@@ -182,6 +184,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 // Called when the rgb layer is updated. rgb is all colors per key.
 void rgb_matrix_indicators_user() {
+  uprintf("%x rgb_matrix_indicators_user flags", rgb_matrix_get_flags());
   if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
     // rgb_matrix_set_color_all(0x0, 0x0, 0x0);
     set_rgb_caps_leds_on();
