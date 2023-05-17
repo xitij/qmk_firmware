@@ -96,6 +96,15 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 #define LED_FLAG_CAPS LED_FLAG_NONE
 static void set_rgb_caps_leds_on(void);
 
+void keyboard_post_init_user(void) {
+  // Customise these values to desired behaviour
+  debug_enable=true;
+  debug_matrix=true;
+  debug_keyboard=true;
+  xprintf('hello world');
+  //debug_mouse=true;
+}
+
 // Called when the lighting layer is updated. led is single color per key
 // bool led_update_user(led_t led_state) {
 //   if (led_state.caps_lock) {
@@ -133,7 +142,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case RGB_TOG:   // RGB Toggle ON or OFF
       if (record->event.pressed) {
         if (rgb_matrix_is_enabled()) {
-          uprintf("%x flags", rgb_matrix_get_flags());
+          xprintf("%x flags", rgb_matrix_get_flags());
           switch (rgb_matrix_get_flags()) {
             case LED_FLAG_CAPS:
               // RGB was turned ON because of CAPS.
@@ -184,7 +193,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 // Called when the rgb layer is updated. rgb is all colors per key.
 void rgb_matrix_indicators_user() {
-  uprintf("%x rgb_matrix_indicators_user flags", rgb_matrix_get_flags());
+  xprintf("%x rgb_matrix_indicators_user flags", rgb_matrix_get_flags());
   if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
     // rgb_matrix_set_color_all(0x0, 0x0, 0x0);
     set_rgb_caps_leds_on();
