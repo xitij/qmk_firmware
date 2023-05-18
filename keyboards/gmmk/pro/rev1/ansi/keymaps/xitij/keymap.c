@@ -182,7 +182,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 // Called when the rgb layer is updated. rgb is all colors per key.
 void rgb_matrix_indicators_user() {
-  xprintf("[rgb_matrix_indicators_user] Enabled[%d] / FLAGS[%x]\n", rgb_matrix_is_enabled(), rgb_matrix_get_flags());
+  // xprintf("[rgb_matrix_indicators_user] Enabled[%d] / FLAGS[%x]\n", rgb_matrix_is_enabled(), rgb_matrix_get_flags());
   if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
     set_rgb_caps_leds_on();
   }
