@@ -100,7 +100,7 @@ void keyboard_post_init_user(void) {
   // Customise these values to desired behaviour
   debug_enable=true;
   debug_matrix=true;
-  debug_keyboard=true;
+  debug_keyboard=false;
   xprintf("hello world");
   //debug_mouse=true;
 }
@@ -141,7 +141,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       break;
     case RGB_TOG:   // RGB Toggle ON or OFF
       if (record->event.pressed) {
-        xprintf("[process_record_user] %s %x flags ", rgb_matrix_is_enabled(), rgb_matrix_get_flags());
+        xprintf("[process_record_user] RGB TOGGLE - Enabled[%d] / CAPS[%d] / FLAGS[%x]", rgb_matrix_is_enabled(), host_keyboard_led_state().caps_lock, rgb_matrix_get_flags());
         if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
           // RGB was turned ON because of CAPS. Do nothing.
           // TODO: Maybe set the flag here so we can turn it on once caps is disabled.
@@ -154,6 +154,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       break;
     case KC_CAPS:   // CAPS LOCK
       if (record->event.pressed) {
+        xprintf("[process_record_user] CAPS LOCK - Enabled[%d] / CAPS[%d] / FLAGS[%x]", rgb_matrix_is_enabled(), host_keyboard_led_state().caps_lock, rgb_matrix_get_flags());
         if (rgb_matrix_is_enabled()) {
           switch (rgb_matrix_get_flags()) {
             case LED_FLAG_ALL:
