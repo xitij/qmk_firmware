@@ -159,10 +159,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             case LED_FLAG_ALL:
               // RGB was toggled on, switch to flag to CAPS LOCK.
               rgb_matrix_set_flags(LED_FLAG_CAPS);
-              // Disable the RGB.
+              // Disable the RGB. Will be re-enabled by the processing of the toggle.
               rgb_matrix_disable_noeeprom();
-              // Turn on the CAPS LOCK RGB.
-              set_rgb_caps_leds_on();
               break;
             case LED_FLAG_CAPS:
               // RGB was turned on for CAPS LOCK, switch to flag to ALL and turn off.
@@ -173,7 +171,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         } else {
           // RGB was off, turn on the caps lock leds.
           rgb_matrix_set_flags(LED_FLAG_CAPS);
-          set_rgb_caps_leds_on();
+          rgb_matrix_enable_noeeprom();
         }
       }
   }
@@ -183,10 +181,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 // Called when the rgb layer is updated. rgb is all colors per key.
 void rgb_matrix_indicators_user() {
-  // if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
-  //   // rgb_matrix_set_color_all(0x0, 0x0, 0x0);
-  //   set_rgb_caps_leds_on();
-  // }
+  if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
+    set_rgb_caps_leds_on();
+  }
   // if (host_keyboard_led_state().caps_lock) {
   //   set_rgb_caps_leds_on();
   // }
