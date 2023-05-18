@@ -144,9 +144,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
           // RGB was turned ON because of CAPS. Do nothing.
           // TODO: Maybe set the flag here so we can turn it on once caps is disabled.
+          xprintf("[process_record_user] RGB TOGGLE - returning false");
           return false; // Skip all further processing.
         } else {
           // Set flag to ALL. Allow the RGB Toggle key turn on the leds.
+          xprintf("[process_record_user] RGB TOGGLE - else case");
           rgb_matrix_set_flags(LED_FLAG_ALL);
         }
       }
