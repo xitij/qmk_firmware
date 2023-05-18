@@ -99,9 +99,8 @@ static void set_rgb_caps_leds_on(void);
 void keyboard_post_init_user(void) {
   // Customise these values to desired behaviour
   debug_enable=true;
-  debug_matrix=true;
+  debug_matrix=false;
   debug_keyboard=false;
-  xprintf("hello world");
   //debug_mouse=true;
 }
 
