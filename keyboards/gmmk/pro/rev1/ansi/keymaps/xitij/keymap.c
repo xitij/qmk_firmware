@@ -141,26 +141,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       break;
     case RGB_TOG:   // RGB Toggle ON or OFF
       if (record->event.pressed) {
-        if (rgb_matrix_is_enabled()) {
-          xprintf("%x flags", rgb_matrix_get_flags());
-          switch (rgb_matrix_get_flags()) {
-            case LED_FLAG_CAPS:
-              // RGB was turned ON because of CAPS.
-              // Change to LED_FLAG_ALL to signal RGB Toggle.
-              // rgb_matrix_set_flags(LED_FLAG_ALL);
-              // Disable the RGB (Will be re-enabled by the processing of the toggle below by rgb_matrix_indicator_user).
-              // rgb_matrix_disable_noeeprom();
-              return false; // Skip all further processing.
-              break;
-            // case LED_FLAG_ALL:
-            //   if (host_keyboard_led_state().caps_lock) {
-            //     // Change flag to signal CAPS.
-            //     rgb_matrix_set_flags(LED_FLAG_CAPS);
-            //     // Disable the RGB (Will be re-enabled by the processing of the toggle below by rgb_matrix_indicator_user).
-            //     rgb_matrix_disable_noeeprom();
-            //   }
-            //   break;
-          }
+        xprintf("[process_record_user] %s %x flags ", rgb_matrix_is_enabled(), rgb_matrix_get_flags());
+        if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
+          // RGB was turned ON because of CAPS. Do nothing.
+          // TODO: Maybe set the flag here so we can turn it on once caps is disabled.
+          return false; // Skip all further processing.
+        } else {
+          // Set flag to ALL. Allow the RGB Toggle key turn on the leds.
+          rgb_matrix_set_flags(LED_FLAG_ALL);
         }
       }
       break;
@@ -171,8 +159,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             case LED_FLAG_ALL:
               // RGB was toggled on, switch to flag to CAPS LOCK.
               rgb_matrix_set_flags(LED_FLAG_CAPS);
-              // Disable the RGB (Will be re-enabled by the processing of the toggle below by rgb_matrix_indicator_user).
-              rgb_matrix_disable_noeeprom();   
+              // Disable the RGB.
+              rgb_matrix_disable_noeeprom();
+              // Turn on the CAPS LOCK RGB.
+              set_rgb_caps_leds_on();
               break;
             case LED_FLAG_CAPS:
               // RGB was turned on for CAPS LOCK, switch to flag to ALL and turn off.
@@ -193,11 +183,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 // Called when the rgb layer is updated. rgb is all colors per key.
 void rgb_matrix_indicators_user() {
-  xprintf("%x rgb_matrix_indicators_user flags", rgb_matrix_get_flags());
-  if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
-    // rgb_matrix_set_color_all(0x0, 0x0, 0x0);
-    set_rgb_caps_leds_on();
-  }
+  // if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
+  //   // rgb_matrix_set_color_all(0x0, 0x0, 0x0);
+  //   set_rgb_caps_leds_on();
+  // }
   // if (host_keyboard_led_state().caps_lock) {
   //   set_rgb_caps_leds_on();
   // }
@@ -231,6 +220,21 @@ static void set_rgb_caps_leds_on() {
   rgb_matrix_set_color(88, 0xFF, 0x0, 0x0); // Right side LED 7
   rgb_matrix_set_color(91, 0xFF, 0x0, 0x0); // Left side LED 8
   rgb_matrix_set_color(92, 0xFF, 0x0, 0x0); // Right side LED 8
+
+  rgb_matrix_set_color( 1, 0xFF, 0x0, 0x0); // `
+  rgb_matrix_set_color( 7, 0xFF, 0x0, 0x0); // 1
+  rgb_matrix_set_color(13, 0xFF, 0x0, 0x0); // 2
+  rgb_matrix_set_color(19, 0xFF, 0x0, 0x0); // 3
+  rgb_matrix_set_color(24, 0xFF, 0x0, 0x0); // 4
+  rgb_matrix_set_color(29, 0xFF, 0x0, 0x0); // 5
+  rgb_matrix_set_color(36, 0xFF, 0x0, 0x0); // 6
+  rgb_matrix_set_color(40, 0xFF, 0x0, 0x0); // 7
+  rgb_matrix_set_color(45, 0xFF, 0x0, 0x0); // 8
+  rgb_matrix_set_color(51, 0xFF, 0x0, 0x0); // 9
+  rgb_matrix_set_color(57, 0xFF, 0x0, 0x0); // 0
+  rgb_matrix_set_color(62, 0xFF, 0x0, 0x0); // -
+  rgb_matrix_set_color(78, 0xFF, 0x0, 0x0); // =
+  rgb_matrix_set_color(85, 0xFF, 0x0, 0x0); // Backspace
 
   rgb_matrix_set_color( 8, 0xFF, 0x0, 0x0);	// Q
   rgb_matrix_set_color(14, 0xFF, 0x0, 0x0);	// W
