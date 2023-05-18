@@ -141,16 +141,25 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case RGB_TOG:   // RGB Toggle ON or OFF
       if (record->event.pressed) {
         xprintf("[process_record_user] RGB TOGGLE - Enabled[%d] / FLAGS[%x]\n", rgb_matrix_is_enabled(), rgb_matrix_get_flags());
-        if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
-          // RGB was turned ON because of CAPS. Do nothing.
-          // TODO: Maybe set the flag here so we can turn it on once caps is disabled.
-          xprintf("[process_record_user] RGB TOGGLE - returning false");
-          return false; // Skip all further processing.
-        } else {
-          // Set flag to ALL. Allow the RGB Toggle key turn on the leds.
-          xprintf("[process_record_user] RGB TOGGLE - else case");
-          rgb_matrix_set_flags(LED_FLAG_ALL);
+        if (rgb_matrix_is_enabled()) {
+          switch (rgb_matrix_get_flags()) {
+            case LED_FLAG_CAPS:
+              break;
+            case LED_FLAG_ALL:
+              break;
+          }
+          rgb_matrix_disable_noeeprom();
         }
+        // if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
+        //   // RGB was turned ON because of CAPS. Do nothing.
+        //   // TODO: Maybe set the flag here so we can turn it on once caps is disabled.
+        //   xprintf("[process_record_user] RGB TOGGLE - returning false\n");
+        //   return false; // Skip all further processing.
+        // } else {
+        //   // Set flag to ALL. Allow the RGB Toggle key turn on the leds.
+        //   xprintf("[process_record_user] RGB TOGGLE - else case\n");
+        //   rgb_matrix_set_flags(LED_FLAG_ALL);
+        // }
       }
       break;
     case KC_CAPS:   // CAPS LOCK
