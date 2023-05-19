@@ -15,6 +15,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include QMK_KEYBOARD_H
+#ifdef CONSOLE_ENABLE
+#include "print.h"
+#endif // CONSOLE_ENABLE
+
+#ifdef RGB_MATRIX_ENABLE
+  #ifndef RGB_CONFIRMATION_BLINKING_TIME
+    #define RGB_CONFIRMATION_BLINKING_TIME 2000 // 2 seconds
+  #endif
+#endif // RGB_MATRIX_ENABLE
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -31,7 +40,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   // cable to get the board into bootloader mode - definitely not fun when you're working on your QMK builds. Remove this and put it back to KC_RGUI
   // if that's your preference.
   //
-  // To put the keyboard in bootloader mode, use FN+backslash. If you accidentally put it into bootloader, you can just unplug the USB cable and
+  // To put the keyboard in bootloader mode, use FN+Left Shit. If you accidentally put it into bootloader, you can just unplug the USB cable and
   // it'll be back to normal when you plug it back in.
   //
   // This keyboard defaults to 6KRO instead of NKRO for compatibility reasons (some KVMs and BIOSes are incompatible with NKRO).
@@ -73,13 +82,281 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 // clang-format on
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Encoder (rotary knob) enabled
+/////////////////////////////////////////////////////////////////////////////////////
 #ifdef ENCODER_ENABLE
+// Called when the knob is turned (allows user to handle)
 bool encoder_update_user(uint8_t index, bool clockwise) {
     if (clockwise) {
       tap_code(KC_VOLU);
     } else {
       tap_code(KC_VOLD);
     }
-    return false;
+    return false; // Skip all further processing.
 }
 #endif // ENCODER_ENABLE
+
+/////////////////////////////////////////////////////////////////////////////////////
+// RGB Matrix (rgb key leds) enabled
+/////////////////////////////////////////////////////////////////////////////////////
+#ifdef RGB_MATRIX_ENABLE
+// Renaming these to make the purpose on this keymap clearer
+#define LED_FLAG_CAPS LED_FLAG_NONE
+#define LED_FLAG_EFFECTS LED_FLAG_INDICATOR
+static void set_rgb_caps_leds_on(void);
+
+#if RGB_CONFIRMATION_BLINKING_TIME > 0
+static uint16_t effect_started_time = 0;
+static uint8_t r_effect = 0x0, g_effect = 0x0, b_effect = 0x0;
+// static void start_effects(void);
+
+// The higher this is, the slower the blinking will be
+#ifndef TIME_SELECTED_BIT
+  #define TIME_SELECTED_BIT 8
+#endif
+#if TIME_SELECTED_BIT < 0 || TIME_SELECTED_BIT >= 16
+  #error "TIME_SELECTED_BIT must be a positive integer smaller than 16"
+#endif
+#define effect_red() r_effect = 0xFF, g_effect = 0x0, b_effect = 0x0
+#define effect_green() r_effect = 0x0, g_effect = 0xFF, b_effect = 0x0
+#endif // RGB_CONFIRMATION_BLINKING_TIME > 0
+
+void keyboard_post_init_user(void) {
+#ifdef CONSOLE_ENABLE
+  // Customise these values to desired behaviour
+  debug_enable=true;
+  debug_matrix=false;
+  debug_keyboard=false;
+#endif // CONSOLE_ENABLE
+}
+
+// Called when the lighting layer is updated. led is single color per key.
+bool led_update_user(led_t led_state) {
+  if (led_state.caps_lock) {
+    if (!rgb_matrix_is_enabled()) {
+      // Turn ON the RGB Matrix for CAPS LOCK.
+      rgb_matrix_set_flags(LED_FLAG_CAPS);
+      rgb_matrix_enable();
+    }
+  } else if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
+    // RGB Matrix was only ON because of CAPS LOCK. Turn it OFF.
+    rgb_matrix_set_flags(LED_FLAG_ALL);
+    rgb_matrix_disable();
+  }
+  return true; // Continue other processing.
+}
+
+// Called when any key is pressed.
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) {
+    case RGB_MOD:   // Next RGB Mode
+    case RGB_RMOD:  // Previous RGB Mode
+    case RGB_HUI:   // Hue Increase
+    case RGB_HUD:   // Hue Decrease
+    case RGB_VAI:   // Brightness Increase
+    case RGB_VAD:   // Brightness Decrease
+    case RGB_SPI:   // Speed Increase
+    case RGB_SPD:   // Speed Decrease
+      if (record->event.pressed) {
+        if (rgb_matrix_get_flags() != LED_FLAG_ALL) {
+          // Ignore changes to RGB settings while only it's supposed to be OFF.
+          return false;  // Skip all further processing.
+        }
+      }
+      break;
+    case RGB_TOG:   // RGB Toggle ON or OFF
+      if (record->event.pressed) {
+#ifdef CONSOLE_ENABLE
+        xprintf("[process_record_user] RGB TOGGLE - Enabled[%d] / FLAGS[%x]\n", rgb_matrix_is_enabled(), rgb_matrix_get_flags());
+#endif // CONSOLE_ENABLE
+        if (rgb_matrix_is_enabled()) {
+          switch (rgb_matrix_get_flags()) {
+#if RGB_CONFIRMATION_BLINKING_TIME > 0
+            case LED_FLAG_EFFECTS:
+#endif // RGB_CONFIRMATION_BLINKING_TIME > 0
+            case LED_FLAG_CAPS:
+              // Turned ON because of EFFECTS or CAPS, is actually OFF.
+              // Change to LED_FLAG_ALL to signal it's really ON.
+              rgb_matrix_set_flags(LED_FLAG_ALL);
+              // Will be re-enabled by the processing of the RGB toggle.
+              rgb_matrix_disable_noeeprom();
+              break;
+            case LED_FLAG_ALL:
+              // Is actually ON.
+#if RGB_CONFIRMATION_BLINKING_TIME > 0
+              if (effect_started_time > 0) {
+                // Signal EFFECTS.
+                rgb_matrix_set_flags(LED_FLAG_EFFECTS);
+                // Will be re-enabled by the processing of the RGB toggle.
+                rgb_matrix_disable_noeeprom();
+              } else
+#endif // RGB_CONFIRMATION_BLINKING_TIME > 0
+              if (host_keyboard_led_state().caps_lock) {
+                // Signal CAPS.
+                rgb_matrix_set_flags(LED_FLAG_CAPS);
+                // Will be re-enabled by the processing of the RGB toggle.
+                rgb_matrix_disable_noeeprom();
+              }
+              break;
+          }
+        }
+      }
+      break;
+  }
+  return true; // Continue implementations
+}
+
+// Called when the rgb layer is updated. rgb is all colors per key.
+bool rgb_matrix_indicators_user(void) {
+#if RGB_CONFIRMATION_BLINKING_TIME > 0
+  if (effect_started_time > 0) {
+    // Render blinking EFFECTS.
+    uint16_t deltaTime = sync_timer_elapsed(effect_started_time);
+    if (deltaTime <= RGB_CONFIRMATION_BLINKING_TIME) {
+      uint8_t led_state = ((~deltaTime) >> TIME_SELECTED_BIT) & 0x01;
+      uint8_t val_r = led_state * r_effect;
+      uint8_t val_g = led_state * g_effect;
+      uint8_t val_b = led_state * b_effect;
+      rgb_matrix_set_color_all(val_r, val_g, val_b);
+      if (host_keyboard_led_state().caps_lock) {
+        set_rgb_caps_leds_on();
+      }
+      return false;
+    } else {
+      // EFFECTS duration is finished.
+      effect_started_time = 0;
+      if (rgb_matrix_get_flags() == LED_FLAG_EFFECTS) {
+        // It was turned ON because of EFFECTS.
+        if (host_keyboard_led_state().caps_lock) {
+          // CAPS is still ON. Demote to CAPS.
+          rgb_matrix_set_flags(LED_FLAG_CAPS);
+        } else {
+          // There is nothing else keeping RGB enabled. Reset flags and turn if off.
+          rgb_matrix_set_flags(LED_FLAG_ALL);
+          rgb_matrix_disable_noeeprom();
+        }
+      }
+    }
+  }
+#endif // RGB_CONFIRMATION_BLINKING_TIME > 0
+  if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
+    rgb_matrix_set_color_all(0x0, 0x0, 0x0);
+  }
+  if (host_keyboard_led_state().caps_lock) {
+    set_rgb_caps_leds_on();
+  }
+  return false;
+}
+
+#if RGB_CONFIRMATION_BLINKING_TIME > 0
+// static void start_effects(void) {
+//   effect_started_time = sync_timer_read();
+//   if (!rgb_matrix_is_enabled()) {
+//     // Turn it ON, signal the cause (EFFECTS).
+//     rgb_matrix_set_flags(LED_FLAG_EFFECTS);
+//     rgb_matrix_enable_noeeprom();
+//   } else if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
+//     // It's already ON, promote the cause from CAPS to EFFECTS.
+//     rgb_matrix_set_flags(LED_FLAG_EFFECTS);
+//   }
+// }
+#endif // RGB_CONFIRMATION_BLINKING_TIME > 0
+
+//  67, led 01   0, ESC    6, F1      12, F2      18, F3   23, F4   28, F5      34, F6   39, F7   44, F8      50, F9   56, F10   61, F11    66, F12    69, Prt       Rotary(Mute)   68, led 12
+//  70, led 02   1, ~      7, 1       13, 2       19, 3    24, 4    29, 5       35, 6    40, 7    45, 8       51, 9    57, 0     62, -_     78, (=+)   85, BackSpc   72, Home       71, led 13
+//  73, led 03   2, Tab    8, Q       14, W       20. E    25, R    30, T       36, Y    41, U    46, I       52, O    58, P     63, [{     89, ]}     93, \|        75, PgUp       74, led 14
+//  76, led 04   3, Caps   9, A       15, S       21, D    26, F    31, G       37, H    42, J    47, K       53, L    59, ;:    64, '"                96, Enter     86, PgDn       77, led 15
+//  80, led 05   4, Sh_L   10, Z      16, X       22, C    27, V    32, B       38, N    43, M    48, ,<      54, .<   60, /?               90, Sh_R   94, Up        82, End        81, led 16
+//  83, led 06   5, Ct_L   11,Win_L   17, Alt_L                     33, SPACE                     49, Alt_R   55, FN             65, Ct_R   95, Left   97, Down      79, Right      84, led 17
+//  87, led 07                                                                                                                                                                      88, led 18
+//  91, led 08
+static void set_rgb_caps_leds_on() {
+  // Set alpha and capslock to red
+  rgb_matrix_set_color( 3, 0xFF, 0x0, 0x0);	// Caps
+
+  rgb_matrix_set_color( 0, 0xFF, 0x0, 0x0); // ESC
+  rgb_matrix_set_color( 6, 0xFF, 0x0, 0x0); // F1
+  rgb_matrix_set_color(12, 0xFF, 0x0, 0x0); // F2
+  rgb_matrix_set_color(18, 0xFF, 0x0, 0x0); // F3
+  rgb_matrix_set_color(23, 0xFF, 0x0, 0x0); // F4
+  rgb_matrix_set_color(28, 0xFF, 0x0, 0x0); // F5
+  rgb_matrix_set_color(34, 0xFF, 0x0, 0x0); // F6
+  rgb_matrix_set_color(39, 0xFF, 0x0, 0x0); // F7
+  rgb_matrix_set_color(44, 0xFF, 0x0, 0x0); // F8
+  rgb_matrix_set_color(50, 0xFF, 0x0, 0x0); // F9
+  rgb_matrix_set_color(56, 0xFF, 0x0, 0x0); // F10
+  rgb_matrix_set_color(61, 0xFF, 0x0, 0x0); // F11
+  rgb_matrix_set_color(66, 0xFF, 0x0, 0x0); // F12
+  rgb_matrix_set_color(69, 0xFF, 0x0, 0x0); // Delete
+
+  rgb_matrix_set_color(67, 0xFF, 0x0, 0x0); // Left side LED 1
+  rgb_matrix_set_color(68, 0xFF, 0x0, 0x0); // Right side LED 1
+  rgb_matrix_set_color(70, 0xFF, 0x0, 0x0); // Left side LED 2
+  rgb_matrix_set_color(71, 0xFF, 0x0, 0x0); // Right side LED 2
+  rgb_matrix_set_color(73, 0xFF, 0x0, 0x0); // Left side LED 3
+  rgb_matrix_set_color(74, 0xFF, 0x0, 0x0); // Right side LED 3
+  rgb_matrix_set_color(76, 0xFF, 0x0, 0x0); // Left side LED 4
+  rgb_matrix_set_color(77, 0xFF, 0x0, 0x0); // Right side LED 4
+  rgb_matrix_set_color(80, 0xFF, 0x0, 0x0); // Left side LED 5
+  rgb_matrix_set_color(81, 0xFF, 0x0, 0x0); // Right side LED 5
+  rgb_matrix_set_color(83, 0xFF, 0x0, 0x0); // Left side LED 6
+  rgb_matrix_set_color(84, 0xFF, 0x0, 0x0); // Right side LED 6
+  rgb_matrix_set_color(87, 0xFF, 0x0, 0x0); // Left side LED 7
+  rgb_matrix_set_color(88, 0xFF, 0x0, 0x0); // Right side LED 7
+  rgb_matrix_set_color(91, 0xFF, 0x0, 0x0); // Left side LED 8
+  rgb_matrix_set_color(92, 0xFF, 0x0, 0x0); // Right side LED 8
+
+  rgb_matrix_set_color( 1, 0xFF, 0x0, 0x0); // `
+  rgb_matrix_set_color( 7, 0xFF, 0x0, 0x0); // 1
+  rgb_matrix_set_color(13, 0xFF, 0x0, 0x0); // 2
+  rgb_matrix_set_color(19, 0xFF, 0x0, 0x0); // 3
+  rgb_matrix_set_color(24, 0xFF, 0x0, 0x0); // 4
+  rgb_matrix_set_color(29, 0xFF, 0x0, 0x0); // 5
+  rgb_matrix_set_color(35, 0xFF, 0x0, 0x0); // 6
+  rgb_matrix_set_color(40, 0xFF, 0x0, 0x0); // 7
+  rgb_matrix_set_color(45, 0xFF, 0x0, 0x0); // 8
+  rgb_matrix_set_color(51, 0xFF, 0x0, 0x0); // 9
+  rgb_matrix_set_color(57, 0xFF, 0x0, 0x0); // 0
+  rgb_matrix_set_color(62, 0xFF, 0x0, 0x0); // -
+  rgb_matrix_set_color(78, 0xFF, 0x0, 0x0); // =
+  rgb_matrix_set_color(85, 0xFF, 0x0, 0x0); // Backspace
+
+  rgb_matrix_set_color( 8, 0xFF, 0x0, 0x0);	// Q
+  rgb_matrix_set_color(14, 0xFF, 0x0, 0x0);	// W
+  rgb_matrix_set_color(20, 0xFF, 0x0, 0x0);	// E
+  rgb_matrix_set_color(25, 0xFF, 0x0, 0x0);	// R
+  rgb_matrix_set_color(30, 0xFF, 0x0, 0x0);	// T
+  rgb_matrix_set_color(36, 0xFF, 0x0, 0x0);	// Y
+  rgb_matrix_set_color(41, 0xFF, 0x0, 0x0);	// U
+  rgb_matrix_set_color(46, 0xFF, 0x0, 0x0);	// I
+  rgb_matrix_set_color(52, 0xFF, 0x0, 0x0);	// O
+  rgb_matrix_set_color(58, 0xFF, 0x0, 0x0);	// P
+  rgb_matrix_set_color(63, 0xFF, 0x0, 0x0);	// [
+  rgb_matrix_set_color(89, 0xFF, 0x0, 0x0);	// ]
+  rgb_matrix_set_color(93, 0xFF, 0x0, 0x0);	// ?
+
+  rgb_matrix_set_color( 9, 0xFF, 0x0, 0x0);	// A
+  rgb_matrix_set_color(15, 0xFF, 0x0, 0x0);	// S
+  rgb_matrix_set_color(21, 0xFF, 0x0, 0x0);	// D
+  rgb_matrix_set_color(26, 0xFF, 0x0, 0x0);	// F
+  rgb_matrix_set_color(31, 0xFF, 0x0, 0x0);	// G
+  rgb_matrix_set_color(37, 0xFF, 0x0, 0x0);	// H
+  rgb_matrix_set_color(42, 0xFF, 0x0, 0x0);	// J
+  rgb_matrix_set_color(47, 0xFF, 0x0, 0x0);	// K
+  rgb_matrix_set_color(53, 0xFF, 0x0, 0x0);	// L
+  rgb_matrix_set_color(59, 0xFF, 0x0, 0x0);	// ;
+  rgb_matrix_set_color(64, 0xFF, 0x0, 0x0);	// '
+
+  rgb_matrix_set_color(10, 0xFF, 0x0, 0x0);	// Z
+  rgb_matrix_set_color(16, 0xFF, 0x0, 0x0);	// X
+  rgb_matrix_set_color(22, 0xFF, 0x0, 0x0);	// C
+  rgb_matrix_set_color(27, 0xFF, 0x0, 0x0);	// V
+  rgb_matrix_set_color(32, 0xFF, 0x0, 0x0);	// B
+  rgb_matrix_set_color(38, 0xFF, 0x0, 0x0);	// N
+  rgb_matrix_set_color(43, 0xFF, 0x0, 0x0);	// M
+  rgb_matrix_set_color(48, 0xFF, 0x0, 0x0);	// ,
+  rgb_matrix_set_color(54, 0xFF, 0x0, 0x0);	// .
+  rgb_matrix_set_color(60, 0xFF, 0x0, 0x0);	// /
+}
+#endif // RGB_MATRIX_ENABLE

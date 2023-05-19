@@ -20,3 +20,15 @@
 #define DRIVER_1_LED_TOTAL 66
 #define DRIVER_2_LED_TOTAL 32
 #define RGB_MATRIX_LED_COUNT (DRIVER_1_LED_TOTAL + DRIVER_2_LED_TOTAL)
+
+#ifdef RGB_MATRIX_ENABLE
+  // 20 minutes (20 * 60 * 1000ms)
+  #define RGB_MATRIX_TIMEOUT 1200000
+
+  // Below added per: https://beta.docs.qmk.fm/using-qmk/hardware-features/lighting/feature_rgb_matrix#suspended-state-id-suspended-state
+  #define RGB_DISABLE_WHEN_USB_SUSPENDED
+
+  // Effects
+  #define RGB_MATRIX_FRAMEBUFFER_EFFECTS  // Heatmap, Rain
+  #define RGB_MATRIX_KEYPRESSES           // REACTIVE, SPLASH modes
+#endif
