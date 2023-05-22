@@ -105,14 +105,52 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 #ifdef ENCODER_ENABLE
 // Called when the knob is turned (allows user to handle)
 bool encoder_update_user(uint8_t index, bool clockwise) {
+  // https://beta.docs.qmk.fm/using-qmk/simple-keycodes/feature_advanced_keycodes#alt-escape-for-alt-tab-id-alt-escape-for-alt-tab
+  if (get_mods() & MOD_MASK_CTRL) { // If CTRL is held
+    uint8_t mod_state = get_mods(); // Store all  modifiers that are held
+    unregister_mods(MOD_MASK_CTRL); // Immediately unregister the CRTL key (don't send CTRL-PgDn) - del_mods doesn't work here (not immediate)
     if (clockwise) {
-      tap_code(KC_VOLU);
+      rgblight_increase_hue();
     } else {
-      tap_code(KC_VOLD);
+      rgblight_decrease_hue();
     }
-    return false; // Skip all further processing.
+    set_mods(mod_state); // Add back in the CTRL key - so ctrl-key will work if ctrl was never released after paging.
+  } else if (get_mods() & MOD_MASK_ALT) {
+    uint8_t mod_state = get_mods();
+    unregister_mods(MOD_MASK_ALT);
+    if (clockwise) {
+      rgblight_increase_sat();
+    } else {
+      rgblight_decrease_sat();
+    }
+    set_mods(mod_state);
+  } else if (get_mods() & MOD_MASK_GUI) {
+    uint8_t mod_state = get_mods();
+    unregister_mods(MOD_MASK_GUI);
+    if (clockwise) {
+      rgblight_increase_val();
+    } else {
+      rgblight_decrease_val();
+    }
+    set_mods(mod_state);
+  } else if (get_mods() & MOD_MASK_SHIFT) {
+    uint8_t mod_state = get_mods();
+    unregister_mods(MOD_MASK_SHIFT);
+    if (clockwise) {
+      rgblight_increase_speed();
+    } else {
+      rgblight_decrease_speed();
+    }
+    set_mods(mod_state);
+  } else if (clockwise) { // All else volume.
+    tap_code(KC_VOLU);
+  } else {
+    tap_code(KC_VOLD);
+  }
+  //return true; //set to return false to counteract enabled encoder in pro.c
+  return false;
 }
-#endif // ENCODER_ENABLE
+#endif //ENCODER_ENABLE
 
 /////////////////////////////////////////////////////////////////////////////////////
 // RGB Matrix (rgb key leds) enabled
@@ -139,6 +177,7 @@ static uint8_t r_effect = 0x0, g_effect = 0x0, b_effect = 0x0;
 #define effect_green() r_effect = 0x0, g_effect = 0xFF, b_effect = 0x0
 #endif // RGB_CONFIRMATION_BLINKING_TIME > 0
 
+// Called on powerup and is the last _init that is run.
 void keyboard_post_init_user(void) {
 #ifdef CONSOLE_ENABLE
   // Customise these values to desired behaviour
@@ -146,6 +185,20 @@ void keyboard_post_init_user(void) {
   debug_matrix=false;
   debug_keyboard=false;
 #endif // CONSOLE_ENABLE
+  int mods[35] = {0,2,3,4,5,11,17,33,49,55,65,95,97,79,94,85,93,96,90,69,92,67,76,80,91,75,86,68,77,81,92,28,34,39,44};
+  int j;
+
+  /* output each array element's value */
+  for (j = 0; j < 35; j++ ) {
+    g_led_config.flags[mods[j]] = LED_FLAG_MODIFIER;
+  }
+
+  if (!rgb_matrix_is_enabled()) {
+    rgb_matrix_enable();
+#ifdef CONSOLE_ENABLE
+    uprintf("ERROR! RGB Matrix Enabled and wrote to EEPROM! - How was the RGB Matrix Disabled?");
+#endif // CONSOLE_ENABLE
+  }
 }
 
 // Called when the lighting layer is updated. led is single color per key.
@@ -167,6 +220,52 @@ bool led_update_user(led_t led_state) {
 // Called when any key is pressed.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
+    // LED quick preset keys assignments.
+    case LED_TLDE:
+      rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR); // Can use RGB_M_P built-in keycode instead.
+      break;
+    case LED_1:
+      rgb_matrix_mode(RGB_MATRIX_ALPHAS_MODS);
+      break;
+    case LED_2:
+      rgb_matrix_mode(RGB_MATRIX_GRADIENT_UP_DOWN);
+      break;
+    case LED_3:
+      rgb_matrix_mode(RGB_MATRIX_JELLYBEAN_RAINDROPS);
+      break;
+    case LED_4:
+      rgb_matrix_mode(RGB_MATRIX_BAND_SAT);
+      break;
+    case LED_5:
+      rgb_matrix_mode(RGB_MATRIX_BAND_VAL);
+      break;
+    case LED_6:
+      rgb_matrix_mode(RGB_MATRIX_BAND_SPIRAL_VAL);
+      break;
+    case LED_7:
+      rgb_matrix_mode(RGB_MATRIX_CYCLE_LEFT_RIGHT); // Can use RGB_M_R built-in keycode instead.
+      break;
+    case LED_8:
+      rgb_matrix_mode(RGB_MATRIX_CYCLE_PINWHEEL); // Can use RGB_M_SW built-in keycode instead.
+      break;
+    case LED_9:
+        rgb_matrix_mode(RGB_MATRIX_BREATHING); // Can use RGB_M_B built-in keycode instead.
+      break;
+
+#ifdef RGB_MATRIX_KEYPRESSES // Reactive effects require RGB_MATRIX_KEYPRESSES in config.h
+    case LED_0:
+      rgb_matrix_mode(RGB_MATRIX_SOLID_REACTIVE_WIDE);
+      break;
+#endif //RGB_MATRIX_KEYPRESSES
+
+#ifdef RGB_MATRIX_FRAMEBUFFER_EFFECTS // Heatmap and Rain require #define RGB_MATRIX_FRAMEBUFFER_EFFECTS in config.h
+    case LED_MINS:
+      rgb_matrix_mode(RGB_MATRIX_DIGITAL_RAIN);
+      break;
+    case LED_EQL:
+      rgb_matrix_mode(RGB_MATRIX_TYPING_HEATMAP);
+      break;
+#endif //RGB_MATRIX_FRAMEBUFFER_EFFECTS
     case RGB_MOD:   // Next RGB Mode
     case RGB_RMOD:  // Previous RGB Mode
     case RGB_HUI:   // Hue Increase
