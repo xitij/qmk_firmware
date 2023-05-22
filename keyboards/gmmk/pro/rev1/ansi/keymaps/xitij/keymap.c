@@ -25,6 +25,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #endif
 #endif // RGB_MATRIX_ENABLE
 
+enum my_keycodes {
+  LED_TLDE = SAFE_RANGE,
+  LED_1,
+  LED_2,
+  LED_3,
+  LED_4,
+  LED_5,
+  LED_6,
+  LED_7,
+  LED_8,
+  LED_9,
+  LED_0,
+  LED_MINS,
+  LED_EQL
+};
+
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -47,20 +63,21 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   // Since this is, among other things, a "gaming" keyboard, a key combination to enable NKRO on the fly is provided for convenience.
   // Press Fn+N to toggle between 6KRO and NKRO. This setting is persisted to the EEPROM and thus persists between restarts.
   [0] = LAYOUT(
-    KC_ESC, KC_F1, KC_F2, KC_F3, KC_F4, KC_F5, KC_F6, KC_F7, KC_F8, KC_F9, KC_F10, KC_F11, KC_F12, KC_DEL, KC_MPLY,
-    KC_GRV, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6, KC_7, KC_8, KC_9, KC_0, KC_MINS, KC_EQL, KC_BSPC, KC_HOME,
-    KC_TAB, KC_Q, KC_W, KC_E, KC_R, KC_T, KC_Y, KC_U, KC_I, KC_O, KC_P, KC_LBRC, KC_RBRC, KC_BSLS, KC_END,
-    KC_CAPS, KC_A, KC_S, KC_D, KC_F, KC_G, KC_H, KC_J, KC_K, KC_L, KC_SCLN, KC_QUOT, KC_ENT, KC_PGUP,
-    KC_LSFT, KC_Z, KC_X, KC_C, KC_V, KC_B, KC_N, KC_M, KC_COMM, KC_DOT, KC_SLSH, KC_RSFT, KC_UP, KC_PGDN,
-    KC_LCTL, KC_LALT, KC_LGUI, KC_SPC, MO(1), KC_RALT, KC_RCTL, KC_LEFT, KC_DOWN, KC_RGHT
+    KC_ESC,   KC_F1,   KC_F2,   KC_F3,    KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,   KC_F12,  KC_DEL,            KC_MPLY,
+    KC_GRV,   KC_1,    KC_2,    KC_3,     KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_MINS,  KC_EQL,  KC_BSPC,           KC_HOME,
+    KC_TAB,   KC_Q,    KC_W,    KC_E,     KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC,  KC_RBRC, KC_BSLS,           KC_END,
+    KC_CAPS,  KC_A,    KC_S,    KC_D,     KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,           KC_ENT,            KC_PGUP,
+    KC_LSFT,           KC_Z,    KC_X,     KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,           KC_RSFT, KC_UP,    KC_PGDN,
+    KC_LCTL,  KC_LALT, KC_LGUI,                             KC_SPC,                             MO(1),   KC_RALT,  KC_RCTL, KC_LEFT, KC_DOWN,  KC_RGHT
   ),
   [1] = LAYOUT(
-    EE_CLR, KC_MYCM, KC_WHOM, KC_CALC, KC_MSEL, KC_MPRV, KC_MNXT, KC_MPLY, KC_MSTP, KC_TRNS, KC_MUTE, KC_VOLD, KC_VOLU, KC_TRNS, KC_MUTE,
-    KC_TRNS, RGB_TOG, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, RGB_VAI,
-    KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, RGB_VAD,
-    DB_TOGG, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, RGB_HUI,
-    QK_BOOT, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, NK_TOGG, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, RGB_MOD, RGB_HUD,
-    KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, RGB_SPD, RGB_RMOD, RGB_SPI)
+    EE_CLR,   KC_BRID, KC_BRIU, KC_MCTL,  KC_LPAD, KC_MPRV, KC_MNXT, KC_MPLY, KC_MSTP, _______, _______, _______,  _______, KC_EJCT,           KC_MUTE,
+    LED_TLDE, LED_1,   LED_2,   LED_3,    LED_4,   LED_5,   LED_6,   LED_7,   LED_8,   LED_9,   LED_0,   LED_MINS, LED_EQL, _______,           KC_PSCR,
+    _______,  RGB_HUI, RGB_VAI, RGB_SAI,  _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______,           _______,
+    DB_TOGG,  RGB_HUD, RGB_VAD, RGB_SAD,  _______, _______, _______, _______, _______, _______, _______, _______,           _______,           _______,
+    QK_BOOT,           _______, _______,  _______, _______, _______, NK_TOGG, _______, _______, _______, _______,           _______, RGB_MOD,  RGB_TOG,
+    _______,  _______, _______,                             _______,                            _______, _______,  _______, RGB_SPD, RGB_RMOD, RGB_SPI
+  )
   // This was the default layout before I edited onlibe at https://config.qmk.fm/#/gmmk/pro/rev1/ansi/LAYOUT
   // Use qmk json2c FILE_TODOWNLOADED JSON -o PATH_TO_OUTPUT to create this file...
   // [0] = LAYOUT(
@@ -88,14 +105,52 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 #ifdef ENCODER_ENABLE
 // Called when the knob is turned (allows user to handle)
 bool encoder_update_user(uint8_t index, bool clockwise) {
+  // https://beta.docs.qmk.fm/using-qmk/simple-keycodes/feature_advanced_keycodes#alt-escape-for-alt-tab-id-alt-escape-for-alt-tab
+  if (get_mods() & MOD_MASK_CTRL) { // If CTRL is held
+    uint8_t mod_state = get_mods(); // Store all  modifiers that are held
+    unregister_mods(MOD_MASK_CTRL); // Immediately unregister the CRTL key (don't send CTRL-PgDn) - del_mods doesn't work here (not immediate)
     if (clockwise) {
-      tap_code(KC_VOLU);
+      rgblight_increase_hue();
     } else {
-      tap_code(KC_VOLD);
+      rgblight_decrease_hue();
     }
-    return false; // Skip all further processing.
+    set_mods(mod_state); // Add back in the CTRL key - so ctrl-key will work if ctrl was never released after paging.
+  } else if (get_mods() & MOD_MASK_ALT) {
+    uint8_t mod_state = get_mods();
+    unregister_mods(MOD_MASK_ALT);
+    if (clockwise) {
+      rgblight_increase_sat();
+    } else {
+      rgblight_decrease_sat();
+    }
+    set_mods(mod_state);
+  } else if (get_mods() & MOD_MASK_GUI) {
+    uint8_t mod_state = get_mods();
+    unregister_mods(MOD_MASK_GUI);
+    if (clockwise) {
+      rgblight_increase_val();
+    } else {
+      rgblight_decrease_val();
+    }
+    set_mods(mod_state);
+  } else if (get_mods() & MOD_MASK_SHIFT) {
+    uint8_t mod_state = get_mods();
+    unregister_mods(MOD_MASK_SHIFT);
+    if (clockwise) {
+      rgblight_increase_speed();
+    } else {
+      rgblight_decrease_speed();
+    }
+    set_mods(mod_state);
+  } else if (clockwise) { // All else volume.
+    tap_code(KC_VOLU);
+  } else {
+    tap_code(KC_VOLD);
+  }
+  //return true; //set to return false to counteract enabled encoder in pro.c
+  return false;
 }
-#endif // ENCODER_ENABLE
+#endif //ENCODER_ENABLE
 
 /////////////////////////////////////////////////////////////////////////////////////
 // RGB Matrix (rgb key leds) enabled
@@ -122,6 +177,7 @@ static uint8_t r_effect = 0x0, g_effect = 0x0, b_effect = 0x0;
 #define effect_green() r_effect = 0x0, g_effect = 0xFF, b_effect = 0x0
 #endif // RGB_CONFIRMATION_BLINKING_TIME > 0
 
+// Called on powerup and is the last _init that is run.
 void keyboard_post_init_user(void) {
 #ifdef CONSOLE_ENABLE
   // Customise these values to desired behaviour
@@ -129,6 +185,20 @@ void keyboard_post_init_user(void) {
   debug_matrix=false;
   debug_keyboard=false;
 #endif // CONSOLE_ENABLE
+  int mods[35] = {0,2,3,4,5,11,17,33,49,55,65,95,97,79,94,85,93,96,90,69,92,67,76,80,91,75,86,68,77,81,92,28,34,39,44};
+  int j;
+
+  /* output each array element's value */
+  for (j = 0; j < 35; j++ ) {
+    g_led_config.flags[mods[j]] = LED_FLAG_MODIFIER;
+  }
+
+  if (!rgb_matrix_is_enabled()) {
+    rgb_matrix_enable();
+#ifdef CONSOLE_ENABLE
+    uprintf("ERROR! RGB Matrix Enabled and wrote to EEPROM! - How was the RGB Matrix Disabled?");
+#endif // CONSOLE_ENABLE
+  }
 }
 
 // Called when the lighting layer is updated. led is single color per key.
@@ -150,6 +220,52 @@ bool led_update_user(led_t led_state) {
 // Called when any key is pressed.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
+    // LED quick preset keys assignments.
+    case LED_TLDE:
+      rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR); // Can use RGB_M_P built-in keycode instead.
+      break;
+    case LED_1:
+      rgb_matrix_mode(RGB_MATRIX_ALPHAS_MODS);
+      break;
+    case LED_2:
+      rgb_matrix_mode(RGB_MATRIX_GRADIENT_UP_DOWN);
+      break;
+    case LED_3:
+      rgb_matrix_mode(RGB_MATRIX_JELLYBEAN_RAINDROPS);
+      break;
+    case LED_4:
+      rgb_matrix_mode(RGB_MATRIX_BAND_SAT);
+      break;
+    case LED_5:
+      rgb_matrix_mode(RGB_MATRIX_BAND_VAL);
+      break;
+    case LED_6:
+      rgb_matrix_mode(RGB_MATRIX_BAND_SPIRAL_VAL);
+      break;
+    case LED_7:
+      rgb_matrix_mode(RGB_MATRIX_CYCLE_LEFT_RIGHT); // Can use RGB_M_R built-in keycode instead.
+      break;
+    case LED_8:
+      rgb_matrix_mode(RGB_MATRIX_CYCLE_PINWHEEL); // Can use RGB_M_SW built-in keycode instead.
+      break;
+    case LED_9:
+        rgb_matrix_mode(RGB_MATRIX_BREATHING); // Can use RGB_M_B built-in keycode instead.
+      break;
+
+#ifdef RGB_MATRIX_KEYPRESSES // Reactive effects require RGB_MATRIX_KEYPRESSES in config.h
+    case LED_0:
+      rgb_matrix_mode(RGB_MATRIX_SOLID_REACTIVE_WIDE);
+      break;
+#endif //RGB_MATRIX_KEYPRESSES
+
+#ifdef RGB_MATRIX_FRAMEBUFFER_EFFECTS // Heatmap and Rain require #define RGB_MATRIX_FRAMEBUFFER_EFFECTS in config.h
+    case LED_MINS:
+      rgb_matrix_mode(RGB_MATRIX_DIGITAL_RAIN);
+      break;
+    case LED_EQL:
+      rgb_matrix_mode(RGB_MATRIX_TYPING_HEATMAP);
+      break;
+#endif //RGB_MATRIX_FRAMEBUFFER_EFFECTS
     case RGB_MOD:   // Next RGB Mode
     case RGB_RMOD:  // Previous RGB Mode
     case RGB_HUI:   // Hue Increase
